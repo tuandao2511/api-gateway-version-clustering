@@ -28,24 +28,25 @@ function errorCallback(error) {
     console.error(error);
 }
 
-function onEvent(_message) {
-    var candidate = _message.value.data.candidate;
-    var message = null;
+// function onEvent(_message) {
+//     var candidate = _message.value.data.candidate;
+//     var message = null;
+//     var session = sessionStorage[sessionStorage.length-1];
 
-    var object = _message.value.object
-    console.log('on event ' +JSON.stringify(_message));
-    if(object === webRtcEndpoint[callerId]){
-        message = {id:'serverCandidate',userId: callerId,candidate : candidate};
-        console.log('?????????????????????????????????????????????????????');
-    }    
-    else {
-        message = {id:'serverCandidate',userId: calleeId,candidate: candidate};
-        console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::;')
-    }    
+//     var object = _message.value.object
+//     console.log('on event ' +JSON.stringify(_message));
+//     if(object === webRtcEndpoint[callerId]){
+//         message = {id:'serverCandidate',userId: callerId,candidate : candidate};
+//         console.log('?????????????????????????????????????????????????????');
+//     }    
+//     else {
+//         message = {id:'serverCandidate',userId: calleeId,candidate: candidate};
+//         console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::;')
+//     }    
 
      
-    socket.emit('candidate',JSON.stringify(message));
-}
+//     socket.emit('candidate',JSON.stringify(message));
+// }
 
 
 
@@ -67,6 +68,9 @@ server.expose('candidate',function(args,opt,callback){
     if(sessionStorage.length > 0) clusterId = l%n;
 
 
+    
+
+
     var configuration = {
         sendCloseMessage : false,
         ws : {
@@ -79,8 +83,7 @@ server.expose('candidate',function(args,opt,callback){
           onerror : errorCallback
         },
         rpc : {
-          requestTimeout : 15000,
-          onEvent : onEvent
+          requestTimeout : 15000
         }
     };
     
@@ -121,6 +124,10 @@ server.expose('candidate',function(args,opt,callback){
 
 
 server.expose('incommingCallResponse', function(args,opt,callback) {
+    var callerSdpOffer = args[0];
+    var calleeSdpOffer = args[1];
+    var callerId = args[2];
+    var calleeId = args[3];
 
 
     var clusterId = 0
@@ -128,6 +135,27 @@ server.expose('incommingCallResponse', function(args,opt,callback) {
     var n = ws_uri.length;
     if(sessionStorage.length > 0) clusterId = l%n;
 
+   
+    function onEvent(_message) {
+        var candidate = _message.value.data.candidate;
+        var message = null;
+        var session = sessionStorage[sessionStorage.length-1];
+    
+        var object = _message.value.object
+        console.log('on event ' +JSON.stringify(_message));
+        if(object === webRtcEndpoint[session][callerId]){
+            message = {id:'serverCandidate',userId: callerId,candidate : candidate};
+            console.log('?????????????????????????????????????????????????????');
+        }    
+        else {
+            message = {id:'serverCandidate',userId: calleeId,candidate: candidate};
+            console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::;')
+        }    
+    
+        socket.emit('candidate',JSON.stringify(message));
+    }
+    
+    
 
     var configuration = {
         sendCloseMessage : false,
@@ -152,11 +180,7 @@ server.expose('incommingCallResponse', function(args,opt,callback) {
 
 
     
-    var callerSdpOffer = args[0];
-    var calleeSdpOffer = args[1];
-    var callerId = args[2];
-    var calleeId = args[3];
-
+   
     // var caller = userRegister.getUserById(callerId);
     // var callee = userRegister.getUserById(calleeId);
     //create media pipeline 
