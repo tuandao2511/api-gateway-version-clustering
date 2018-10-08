@@ -449,5 +449,5 @@ server.enableAuth(function(user, password){
 });
   
   /* HTTP/Websocket server on port 8088 */
-server.listen(8088, 'localhost');
+server.listen(8088, process.env.HOST);
 
