@@ -2,13 +2,14 @@
   "name": "api-gate-way-server",
   "version": "1.0.0",
   "description": "",
-  "main": "api-gateway-server.js",
+  "main": "api-gate-way.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "tuandao",
   "license": "ISC",
   "dependencies": {
+    "jayson": "^2.1.0",
     "json-rpc2": "^1.0.2",
     "kurento-jsonrpc": "^5.1.4",
     "socket.io-client": "^2.1.1"
