@@ -9,9 +9,13 @@
   "author": "tuandao",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^6.1.0",
     "jayson": "^2.1.0",
     "json-rpc2": "^1.0.2",
     "kurento-jsonrpc": "^5.1.4",
     "socket.io-client": "^2.1.1"
+  },
+  "devDependencies": {
+    "node-env-run": "^3.0.2"
   }
 }

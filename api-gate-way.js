@@ -1,18 +1,16 @@
 const jayson = require('jayson');
 const rpcBuilder = require('kurento-jsonrpc');
+require('dotenv').load();
 
 
 // const socket = require('socket.io-client')('http://localhost:3000');
-const socket = require('socket.io-client')('https://tuan-dao.herokuapp.com');
+const socket = require('socket.io-client')(process.env.HEROKU_DOMAIN);
 
 
 var JsonRpcClient = rpcBuilder.clients.JsonRpcClient;
 
 
 // const ws_uri = ["ws://localhost:8888/kurento"];
-const ws_uri = ["ws://34.207.205.137:8888/kurento",
-"ws://35.231.76.154:8888/kurento"];
-
 
 function connectCallback(){
     connected = true;
@@ -66,7 +64,13 @@ let server = jayson.server({
 
     getKurentoClient : function(params,callback) {
 
-        var clusterId = params[0];
+        const ws_uri = process.env.KMS_URIS.split(' ');
+
+        let toHash = max =>{
+            return Math.floor(Math.random() * Math.floor(max));
+        }
+
+        const clusterId = toHash(ws_uri.length);
         var configuration = {
             sendCloseMessage : false,
             ws : {
