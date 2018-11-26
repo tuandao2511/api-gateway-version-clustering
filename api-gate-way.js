@@ -69,7 +69,7 @@ let server = jayson.server({
             socket.emit('candidate',JSON.stringify(_message));
         }
 
-        const clusterId = await toHash(ws_uri.length);
+        const clusterId = toHash(ws_uri.length);
         var configuration = {
             hearbeat: 5000,
             sendCloseMessage : true,
