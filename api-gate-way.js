@@ -35,7 +35,7 @@ var mapJsonRpcClient = new Map();
 let server = jayson.server({
 
 
-    getKurentoClient :function(params,callback) {
+    getKurentoClient :async function(params,callback) {
         const ws_uri = process.env.KMS_URIS.split(' ');
 
         let toHash = max =>{
@@ -45,9 +45,10 @@ let server = jayson.server({
         function connectCallback(){
             connected = true;
             console.log('successfully connected');
+            
             mapJsonRpcClient.set(clusterId,jsonRpcClient);
             console.log('cluster id ' +clusterId);
-            if(jsonRpcClient) callback(null,clusterId);
+            if(jsonRpcClient && clusterId) callback(null,clusterId);
         }
           
         function disconnectCallback(){
@@ -62,6 +63,7 @@ let server = jayson.server({
             // mapJsonRpcClient.set(clusterId,jsonRpcClient);
             // console.log('cluster id ' +clusterId);
             // callback(null,clusterId);
+            callback(error);
         }
         
         function onEvent(_message) {
@@ -69,7 +71,7 @@ let server = jayson.server({
             socket.emit('candidate',JSON.stringify(_message));
         }
 
-        const clusterId = toHash(ws_uri.length);
+        const clusterId = await toHash(ws_uri.length);
         var configuration = {
             hearbeat: 5000,
             sendCloseMessage : true,
@@ -87,7 +89,6 @@ let server = jayson.server({
               onEvent : onEvent
             }
         };
-        
         var jsonRpcClient = new JsonRpcClient(configuration);
     },
     createPipeline : function(args,callback){
