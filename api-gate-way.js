@@ -31,24 +31,81 @@ var JsonRpcClient = rpcBuilder.clients.JsonRpcClient;
 //     }
 // };
 var mapJsonRpcClient = new Map();
+var count = 0;
+
+
+const ws_uri = process.env.KMS_URIS.split(' ');
+
+// let toHash = max =>{
+//     return Math.floor(Math.random() * Math.floor(max));
+// }
+
+function connectCallback(){
+    connected = true;
+    console.log('successfully connected');
+    count++;
+    if(count == ws_uri.length){
+        console.log('number of connection ' + count);
+    }    
+}
+  
+function disconnectCallback(){
+    connected = false;
+    console.log(' disconnect')
+
+}
+  
+function errorCallback(error) {
+    console.error('error: '  +error);
+
+    socket.emit('error',JSON.stringify(error));
+}
+
+function onEvent(_message) {
+
+    socket.emit('candidate',JSON.stringify(_message));
+}
+
+for(i=0 ; i<ws_uri.length; i++){
+    var configuration = {
+        hearbeat: 5000,
+        sendCloseMessage : true,
+        ws : {
+        uri : ws_uri[i],
+        useSockJS: false,
+        onconnected : connectCallback,
+        ondisconnect : disconnectCallback,
+        onreconnecting : disconnectCallback,
+        onreconnected : connectCallback,
+        onerror : errorCallback
+        },
+        rpc : {
+        requestTimeout : 15000,
+        onEvent : onEvent
+        }
+    };
+    var jsonRpcClient = new JsonRpcClient(configuration);
+    mapJsonRpcClient.set(i,jsonRpcClient);
+}
 
 let server = jayson.server({
 
 
-    getKurentoClient :async function(params,callback) {
+    establishToKMS :function(params,callback) {
         const ws_uri = process.env.KMS_URIS.split(' ');
 
-        let toHash = max =>{
-            return Math.floor(Math.random() * Math.floor(max));
-        }
+        // let toHash = max =>{
+        //     return Math.floor(Math.random() * Math.floor(max));
+        // }
 
         function connectCallback(){
             connected = true;
             console.log('successfully connected');
-            
-            mapJsonRpcClient.set(clusterId,jsonRpcClient);
-            console.log('cluster id ' +clusterId);
-            if(jsonRpcClient && clusterId) callback(null,clusterId);
+            count++;
+            if(count == ws_uri.length +1){
+                console.log('number of connection ' + count);
+                callback(null,count+1);
+            }    
         }
           
         function disconnectCallback(){
@@ -57,42 +114,55 @@ let server = jayson.server({
 
         }
           
-        function errorCallback(error) {
-            console.error(error);
-            // var jsonRpcClient = new JsonRpcClient(configuration);
-            // mapJsonRpcClient.set(clusterId,jsonRpcClient);
-            // console.log('cluster id ' +clusterId);
-            // callback(null,clusterId);
-            callback(error);
-        }
+        // function errorCallback(error) {
+        //     console.error(error);
+        //     // var jsonRpcClient = new JsonRpcClient(configuration);
+        //     // mapJsonRpcClient.set(clusterId,jsonRpcClient);
+        //     // console.log('cluster id ' +clusterId);
+        //     // callback(null,clusterId);
+        //     callback(error);
+        // }
         
         function onEvent(_message) {
-          
+    
             socket.emit('candidate',JSON.stringify(_message));
         }
 
-        const clusterId = await toHash(ws_uri.length);
-        var configuration = {
-            hearbeat: 5000,
-            sendCloseMessage : true,
-            ws : {
-              uri : ws_uri[clusterId],
-              useSockJS: false,
-              onconnected : connectCallback,
-              ondisconnect : disconnectCallback,
-              onreconnecting : disconnectCallback,
-              onreconnected : connectCallback,
-              onerror : errorCallback
-            },
-            rpc : {
-              requestTimeout : 15000,
-              onEvent : onEvent
-            }
-        };
-        var jsonRpcClient = new JsonRpcClient(configuration);
+        for(i=0 ; i<ws_uri.length; i++){
+            var configuration = {
+                hearbeat: 5000,
+                sendCloseMessage : true,
+                ws : {
+                uri : ws_uri[i],
+                useSockJS: false,
+                onconnected : connectCallback,
+                ondisconnect : disconnectCallback,
+                onreconnecting : disconnectCallback,
+                onreconnected : connectCallback,
+                //   onerror : errorCallback
+                },
+                rpc : {
+                requestTimeout : 15000,
+                onEvent : onEvent
+                }
+            };
+            var jsonRpcClient = new JsonRpcClient(configuration);
+            mapJsonRpcClient.set(i,jsonRpcClient);
+        }
     },
+
+    getKurentoClient : function(params,callback){
+        const ws_uri = process.env.KMS_URIS.split(' ');
+        let toHash = max =>{
+            return Math.floor(Math.random() * Math.floor(max));
+        }
+        var clusterId = toHash(ws_uri.length);
+
+        callback(null,clusterId);
+    }, 
     createPipeline : function(args,callback){
         var clusterId = args[0];
+        console.log('createPipeline' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('create',params,function(err, _pipeline) {
@@ -103,6 +173,8 @@ let server = jayson.server({
 
     createWebRtcEndpoint : function(args,callback) {
         var clusterId = args[0];
+        console.log('createWebRtcEndpoint ' +clusterId);
+
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('create',params,function(err, _webRtcEndpoint) {
@@ -113,6 +185,7 @@ let server = jayson.server({
 
     addCandidate : function(args,callback){
         var clusterId = args[0];
+        console.log('addCandidate ' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('invoke',params,function(err, response){
@@ -123,6 +196,7 @@ let server = jayson.server({
 
     onIceCandidate : function(args,callback){
         var clusterId = args[0];
+        console.log('onIceCandidate ' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('subscribe',params,function (err, response){
@@ -133,6 +207,7 @@ let server = jayson.server({
 
     connect : function(args,callback){
         var clusterId = args[0];
+        console.log('connect ' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('invoke',params,function(err, response){
@@ -143,6 +218,7 @@ let server = jayson.server({
 
     processOffer : function(args,callback){
         var clusterId = args[0];
+        console.log('processOffer ' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('invoke',params,function(err, sdpAnswer){
@@ -154,6 +230,8 @@ let server = jayson.server({
 
     gatherCandidates : function(args,callback){
         var clusterId = args[0];
+        console.log('gatherCandidates ' +clusterId);
+
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId); 
         jsonRpcClient.send('invoke',params,function(err, response){
@@ -164,6 +242,7 @@ let server = jayson.server({
 
     release: function(args, callback) {
         var clusterId = args[0];
+        console.log('release ' +clusterId);
         var params = args[1];
         var jsonRpcClient = mapJsonRpcClient.get(clusterId);
         jsonRpcClient.send('release',params,function(err, response){
