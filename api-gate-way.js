@@ -3,8 +3,8 @@ const rpcBuilder = require('kurento-jsonrpc');
 require('dotenv').load();
 
 
-// const socket = require('socket.io-client')('http://localhost:8443');
-const socket = require('socket.io-client')(process.env.HEROKU_DOMAIN);
+const socket = require('socket.io-client')('http://localhost:8443');
+// const socket = require('socket.io-client')(process.env.HEROKU_DOMAIN);
 
 
 var JsonRpcClient = rpcBuilder.clients.JsonRpcClient;
